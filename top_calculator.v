@@ -1,34 +1,40 @@
 module top_calculator(
-    input clk,                // System clock from FPGA
-    input reset,              // Asynchronous reset
-    input S1, S2, S3,         // Push buttons for password
-    input [3:0] a,            // Operand A
-    input [3:0] b,            // Operand B
-    input [1:0] m,            // Mode select
+    input CLK100MHZ,          // 100 MHz board clock
+    input btnC,               // reset button
+    input btnU,               // S1
+    input btnL,               // S2
+    input btnR,               // S3
 
-    output [7:0] y,           // Arithmetic result
-    output active_led,        // Indicates calculator unlocked
-    output error_led,         // Indicates wrong password
-    output invalid_led        // Blinking LED for invalid operation
+    input [15:0] sw,          // switches
+
+    output [15:0] LED         // board LEDs
 );
 
-wire unlocked;                // Signal from FSM when correct password entered
-wire error;                   // Error signal from FSM
-wire invalid;                 // Invalid mode signal
-wire blink_clk;               // Slow clock for LED blinking
+// operands from switches
+wire [3:0] a = sw[3:0];      // operand A
+wire [3:0] b = sw[7:4];      // operand B
+wire [1:0] m = sw[9:8];      // mode
 
-// Instantiate lock FSM
+wire [7:0] y;
+wire unlocked;
+wire error;
+wire invalid;
+wire blink_clk;
+
+
+// FSM module
 lock_fsm FSM(
-    .clk(clk),
-    .reset(reset),
-    .S1(S1),
-    .S2(S2),
-    .S3(S3),
+    .clk(CLK100MHZ),
+    .reset(btnC),
+    .S1(btnU),
+    .S2(btnL),
+    .S3(btnR),
     .unlocked(unlocked),
     .error(error)
 );
 
-// Arithmetic block
+
+// arithmetic block
 arithmetic_unit AU(
     .a(a),
     .b(b),
@@ -38,22 +44,26 @@ arithmetic_unit AU(
     .invalid(invalid)
 );
 
-// Clock divider for blinking LED
+
+// clock divider for blinking
 clock_divider CD(
-    .clk(clk),
-    .reset(reset),
+    .clk(CLK100MHZ),
+    .reset(btnC),
     .clk_out(blink_clk)
 );
 
-// Blink generator
+
+// blinking LED
 blink_generator BG(
     .clk(blink_clk),
     .invalid(invalid),
-    .blink_led(invalid_led)
+    .blink_led(LED[2])
 );
 
+
 // LED assignments
-assign active_led = unlocked;     // Active LED when unlocked
-assign error_led  = error;        // Error LED when wrong sequence
+assign LED[0] = unlocked;    // active LED
+assign LED[1] = error;       // error LED
+assign LED[10:3] = y;        // result display
 
 endmodule
