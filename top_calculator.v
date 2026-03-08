@@ -1,28 +1,27 @@
 module top_calculator(
-    input CLK100MHZ,          // 100 MHz board clock
+    input CLK100MHZ,          // 100 MHz clock from Basys3
     input btnC,               // reset button
-    input btnU,               // S1
-    input btnL,               // S2
-    input btnR,               // S3
-
+    input btnU,               // S1 button
+    input btnL,               // S2 button
+    input btnR,               // S3 button
     input [15:0] sw,          // switches
-
-    output [15:0] LED         // board LEDs
+    output [15:0] LED         // LEDs
 );
 
-// operands from switches
+// Operand and mode selection from switches
 wire [3:0] a = sw[3:0];      // operand A
 wire [3:0] b = sw[7:4];      // operand B
-wire [1:0] m = sw[9:8];      // mode
+wire [1:0] m = sw[9:8];      // mode select
 
-wire [7:0] y;
-wire unlocked;
-wire error;
-wire invalid;
-wire blink_clk;
+wire [7:0] y;                // result
+wire unlocked;               // calculator active signal
+wire error;                  // error signal
+wire invalid;                // invalid mode signal
+wire blink_clk;              // slow clock
+wire blink_led;              // blinking LED signal
 
 
-// FSM module
+// Password FSM
 lock_fsm FSM(
     .clk(CLK100MHZ),
     .reset(btnC),
@@ -34,7 +33,7 @@ lock_fsm FSM(
 );
 
 
-// arithmetic block
+// Arithmetic unit
 arithmetic_unit AU(
     .a(a),
     .b(b),
@@ -45,7 +44,7 @@ arithmetic_unit AU(
 );
 
 
-// clock divider for blinking
+// Clock divider for blinking
 clock_divider CD(
     .clk(CLK100MHZ),
     .reset(btnC),
@@ -53,17 +52,19 @@ clock_divider CD(
 );
 
 
-// blinking LED
+// Blink generator
 blink_generator BG(
     .clk(blink_clk),
     .invalid(invalid),
-    .blink_led(LED[2])
+    .blink_led(blink_led)
 );
 
 
 // LED assignments
-assign LED[0] = unlocked;    // active LED
-assign LED[1] = error;       // error LED
-assign LED[10:3] = y;        // result display
+assign LED[0] = unlocked;        // active LED
+assign LED[1] = error;           // error LED
+assign LED[2] = blink_led;       // blinking LED
+assign LED[10:3] = y;            // result display
+assign LED[15:11] = 5'b00000;    // unused LEDs off
 
 endmodule
