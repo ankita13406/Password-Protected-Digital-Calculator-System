@@ -5,7 +5,7 @@ module clock_divider(
 );
 
 // Counter to divide 100 MHz clock
-reg [25:0] count;    // 26-bit counter is enough for 50M
+reg [25:0] count;    // 26-bit counter can count up to ~67M
 
 always @(posedge clk or posedge reset)
 begin
@@ -16,7 +16,7 @@ begin
     end
     else
     begin
-        if(count == 50_000_000)   // 0.5 sec delay for 2 Hz blink
+        if(count == 49_999_999)   // 0.5 sec delay for 2 Hz blink
         begin
             clk_out <= ~clk_out;  // toggle slow clock
             count <= 0;           // restart counting
